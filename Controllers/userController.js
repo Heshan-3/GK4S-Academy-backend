@@ -63,3 +63,25 @@ export function loginUser(req, res){
         }
     )
 }
+
+export async function getAllUsers(req, res){
+    if(req.user.role !== 'admin'){
+        return res.status(403).json({ error: "Access denied" });
+    }
+    else{
+        try {
+            const users = await User.find();
+            res.json(users);
+        } catch (error) {
+            res.status(500).json({ error: "Failed to retrieve users" });
+        }
+    }
+}
+
+export function getUser(req, res) {
+	if (req.user != null) {
+		res.json(req.user);
+	} else {
+		res.status(403).json({ error: "Unauthorized" });
+	}
+}
