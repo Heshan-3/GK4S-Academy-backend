@@ -14,7 +14,10 @@ export async function addContent(req, res) {
             tutor: req.user._id, // use logged-in tutor's ID
             image: req.body.image,
             videoLink,
-            isPaid: isPaid || false
+            isPaid: isPaid || false,
+            price: req.body.price || 0,
+            description: req.body.description,
+            title : title
         });
 
         await newContent.save();
