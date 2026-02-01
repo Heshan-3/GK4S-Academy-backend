@@ -167,3 +167,4 @@ export async function getPublicContents(req, res) {
     res.status(500).json({ error: "Failed to fetch public contents" });
   }
 }
+

@@ -32,26 +32,23 @@ export async function createAccessRequest(req, res) {
     }
 }
 
-export async function handleRequestStatus(req, res) {
-    try {
-        const { requestId, status } = req.body; // status: 'approved' or 'rejected'
+export const handleRequestStatus = async (req, res) => {
+  try {
+    const { requestId } = req.params; // 🔥 Change from req.body to req.params
+    const { status } = req.body;      // 'approved' or 'rejected'
 
-        const request = await Request.findById(requestId);
-        if (!request) return res.status(404).json({ error: "Request not found" });
-
-        // Security check: Is this request actually for this tutor?
-        if (request.tutor.toString() !== req.user._id.toString()) {
-            return res.status(403).json({ error: "Unauthorized" });
-        }
-
-        request.status = status;
-        await request.save();
-
-        res.json({ message: `Request ${status} successfully` });
-    } catch (error) {
-        res.status(500).json({ error: "Update failed" });
-    }
-}
+    const request = await Request.findByIdAndUpdate(
+      requestId, 
+      { status: status }, 
+      { new: true }
+    );
+    
+    // ... rest of your logic (adding content to student's list, etc.)
+    res.status(200).json({ message: `Request ${status}`, request });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
 
 export async function getTutorPendingRequests(req, res) {
     try {

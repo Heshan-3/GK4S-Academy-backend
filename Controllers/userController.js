@@ -138,3 +138,16 @@ export async function getTutorStats(req, res) {
         res.status(500).json({ error: "Failed to fetch tutor stats" });
     }
 }
+
+export async function getPublicTutors(req, res) {
+    try {
+        // Find users where role is 'tutor'
+        // We use .select() to only send safe, public info (no passwords!)
+        const tutors = await User.find({ role: 'tutor' })
+            .select("firstName lastName role address"); 
+
+        res.json(tutors);
+    } catch (error) {
+        res.status(500).json({ error: "Failed to fetch tutors" });
+    }
+}
