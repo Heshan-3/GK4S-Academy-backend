@@ -7,6 +7,12 @@ const materialSchema = new mongoose.Schema({
         required : true
     },
 
+    courseId: { 
+        type: mongoose.Schema.Types.ObjectId, 
+        ref: 'Content', 
+        required: true 
+    },
+
     title : {
         type : String,
         required : true

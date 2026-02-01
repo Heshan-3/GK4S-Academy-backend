@@ -40,6 +40,11 @@ const userSchema = new mongoose.Schema({
         required : true
     },
 
+    purchasedContents: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Content" 
+    }],
+
     gotAccess : {
         type : Boolean,
         required : true,

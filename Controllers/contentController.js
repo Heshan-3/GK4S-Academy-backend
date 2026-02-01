@@ -12,7 +12,6 @@ export async function addContent(req, res) {
 
         const newContent = new Content({
             tutor: req.user._id, // use logged-in tutor's ID
-            image: req.body.image,
             videoLink,
             isPaid: isPaid || false,
             price: req.body.price || 0,
@@ -47,13 +46,13 @@ export async function getContents(req, res) {
 
         // TUTOR
         if (req.user.role === "tutor") {
-            const contents = await Content.find({ tutor: req.user._id });
+            const contents = await Content.find({ tutor: req.user._id }).populate("tutor", "firstName lastName");
             return res.json(contents);
         }
 
         // ADMIN
         if (req.user.role === "admin") {
-            const contents = await Content.find();
+            const contents = await Content.find().populate("tutor", "firstName lastName");
             return res.json(contents);
         }
 
@@ -130,25 +129,23 @@ export async function updateContent(req, res) {
 
 export const getFeaturedContents = async (req, res) => {
   try {
-    const contents = await Content.find()
-      .populate("tutor", "name")
+    const contents = await Content.find() // Fetches ALL (Paid + Free)
+      .populate("tutor", "firstName lastName") // 🔥 Changed from 'name' to match your model
       .sort({ createdAt: -1 });
 
     const contentsWithStats = await Promise.all(
       contents.map(async (content) => {
-        const reviews = await Review.find({ tutor: content.tutor._id });
+        const reviews = await Review.find({ tutor: content.tutor?._id });
 
         const avgRating =
           reviews.length > 0
-            ? (
-                reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length
-              ).toFixed(1)
+            ? (reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length).toFixed(1)
             : 0;
 
         return {
           ...content._doc,
           avgRating,
-          totalStudents: 0, // later link enrollments
+          totalStudents: 0, 
         };
       })
     );
@@ -162,7 +159,7 @@ export const getFeaturedContents = async (req, res) => {
 export async function getPublicContents(req, res) {
   try {
     const contents = await Content.find({ isPaid: false })
-      .populate("tutor", "name")
+      .populate("tutor", "firstName lastName")
       .sort({ createdAt: -1 });
 
     res.json(contents);

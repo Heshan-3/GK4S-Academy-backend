@@ -10,6 +10,7 @@ import materialRouter from "./Routers/materialRoute.js";
 import reviewRouter from "./Routers/reviewRoute.js";
 import messageRouter from "./Routers/messageRoute.js";
 import complaintRouter from "./Routers/complaintRoute.js";
+import requestRouter from "./Routers/requestRoute.js";
 
 // Load environment variables based on NODE_ENV
 const envFile = process.env.NODE_ENV === "production" ? ".env.production" : ".env.development";
@@ -62,6 +63,7 @@ app.use("/api/materials", materialRouter);
 app.use("/api/reviews", reviewRouter);
 app.use("/api/messages", messageRouter);
 app.use("/api/complaints", complaintRouter);
+app.use("/api/requests", requestRouter);
 
 /* ---------- SERVER ---------- */
 const PORT = process.env.PORT || 3000;
