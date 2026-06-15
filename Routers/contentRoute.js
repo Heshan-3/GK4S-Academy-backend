@@ -1,4 +1,4 @@
-import { addContent, deleteContent, getContents, getFeaturedContents, getPublicContents, getTutorContents, updateContent } from "../Controllers/contentController.js";
+import { addContent, deleteContent, getAllPublicContents, getContents, getFeaturedContents, getPublicContents, getTutorContents, updateContent } from "../Controllers/contentController.js";
 import express from "express";
 import { authMiddleware } from "../Middleware/authMiddleware.js";
 import upload from "../Middleware/upload.js";
