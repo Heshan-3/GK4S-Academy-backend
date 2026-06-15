@@ -43,5 +43,6 @@ contentRouter.put("/update/:id", authMiddleware,upload.single("image"), updateCo
 contentRouter.get("/featured", getFeaturedContents);
 contentRouter.get("/public", getPublicContents);
 contentRouter.get("/tutor-contents",authMiddleware, getTutorContents);
+contentRouter.get("/browse", getAllPublicContents);
 
 export default contentRouter;

@@ -213,3 +213,16 @@ export async function getTutorContents(req, res) {
     }
 }
 
+
+export async function getAllPublicContents(req, res) {
+  try {
+    const contents = await Content.find()
+      .populate("tutor", "firstName lastName")
+      .sort({ createdAt: -1 });
+
+    res.json(contents);
+  } catch (error) {
+    res.status(500).json({ error: "Failed to fetch contents" });
+  }
+}
+
