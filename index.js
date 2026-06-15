@@ -14,8 +14,7 @@ import requestRouter from "./Routers/requestRoute.js";
 import { fileURLToPath } from "url";
 
 // Load environment variables based on NODE_ENV
-const envFile = process.env.NODE_ENV === "production" ? ".env.production" : ".env.development";
-dotenv.config({ path: envFile });
+dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
