@@ -2,12 +2,19 @@ import bcrypt from "bcrypt"
 import User from "../Models/user.js"
 import jwt from "jsonwebtoken"
 import Content from "../Models/content.js";
+import Request from "../Models/request.js";
 
 
 export function registerUser(req, res){
     const data = req.body;
 
     data.password = bcrypt.hashSync(data.password, 10)
+
+    if (req.file) {
+        data.profileImage = `/uploads/users/${req.file.filename}`;
+    } else {
+        data.profileImage = "";
+    }
 
     const newUser = new User(data)
 
@@ -16,9 +23,12 @@ export function registerUser(req, res){
             res.json({message : "User registration successfull, yes"})
         }
     ).catch((error)=>{
-        res.status(500).json({error : "User registration failed, no"})
-    })
-}
+        console.error("Registration Error:", error);
+        res.status(500).json({
+            error: error.message
+        });
+        })
+    }
 
 export function loginUser(req, res){
     const data = req.body
@@ -93,8 +103,6 @@ export async function getTutorStudents(req, res) {
         const tutorContents = await Content.find({ tutor: req.user._id });
         const contentIds = tutorContents.map(c => c._id);
 
-        // Find users who have these content IDs in their purchasedContents
-        // Note: This assumes students have a 'purchasedContents' array field
         const students = await User.find({ 
             purchasedContents: { $in: contentIds } 
         }).select("name email _id");
@@ -116,14 +124,11 @@ export async function getTutorStats(req, res) {
         // 2. Count Total Courses
         const courseCount = tutorContents.length;
 
-        // 3. Count Unique Students
-        // Finds users who have purchased at least one of this tutor's courses
         const studentCount = await User.countDocuments({
             purchasedContents: { $in: contentIds }
         });
 
-        // 4. Rating & Reviews (Static for now, or aggregate if you have a Review model)
-        // If you have a Review model, you would sum/average them here.
+
         const averageRating = 4.8; 
         const totalReviews = 132;
 
@@ -141,13 +146,132 @@ export async function getTutorStats(req, res) {
 
 export async function getPublicTutors(req, res) {
     try {
-        // Find users where role is 'tutor'
-        // We use .select() to only send safe, public info (no passwords!)
-        const tutors = await User.find({ role: 'tutor' })
-            .select("firstName lastName role address"); 
+        const tutors = await User.aggregate([
+            { $match: { role: 'tutor' } },
+
+            // Look up courses
+            {
+                $lookup: {
+                    from: 'contents', 
+                    localField: '_id',
+                    foreignField: 'tutor',
+                    as: 'tutorCourses'
+                }
+            },
+
+            // Look up reviews
+            {
+                $lookup: {
+                    from: 'reviews', 
+                    localField: '_id',
+                    foreignField: 'tutor',
+                    as: 'allReviews'
+                }
+            },
+
+            {
+                $project: {
+                    firstName: 1,
+                    lastName: 1,
+                    address: 1,
+                    profileImage: { $ifNull: ["$profileImage", ""] },
+                    courseCount: { $size: { $ifNull: ["$tutorCourses", []] } },
+                    reviewCount: { $size: { $ifNull: ["$allReviews", []] } },
+                    averageRating: { 
+                        $round: [
+                            { $avg: { $ifNull: ["$allReviews.rating", [0]] } }, 
+                            1
+                        ] 
+                    }
+                }
+            }
+        ]);
 
         res.json(tutors);
     } catch (error) {
-        res.status(500).json({ error: "Failed to fetch tutors" });
+        // This is crucial: check your VS Code / Terminal console for this log!
+        console.error("Aggregation Error Details:", error); 
+        res.status(500).json({ error: error.message });
     }
+}
+
+export async function deleteUser(req, res) {
+    try {
+        if (!req.user) {
+            return res.status(401).json({ error: "Unauthorized" });
+        }
+
+        if (req.user.role !== "admin") {
+            return res.status(403).json({ error: "Admins can delete users" });
+        }
+
+        const userId = req.params.id;
+        const user = await User.findById(userId);
+
+        if (!user) {
+            return res.status(404).json({ error: "User not found" });
+        }
+
+        await User.findByIdAndDelete(userId);
+        res.json({ message: "Content deleted successfully" });
+
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: "Failed to delete content" });
+    }
+}
+
+export async function getAdminStats(req, res) {
+  try {
+    // Fetch counts in parallel
+    const [studentCount, tutorCount, courseCount, totalRevenue] = await Promise.all([
+      User.countDocuments({ role: "student" }), // Count Students
+      User.countDocuments({ role: "tutor" }),   // Count Tutors
+      Content.countDocuments(),                 // Count Courses
+      // Sum price of all contents
+      Content.aggregate([{ $group: { _id: null, total: { $sum: { $multiply: ["$price", 0.20] } } } }])
+    ]);
+
+    res.json({
+      students: studentCount,
+      tutors: tutorCount,
+      courses: courseCount,
+      revenue: totalRevenue[0]?.total || 0,
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+}
+
+export async function blockOrUnblockUser(req, res) {
+	const email = req.params.email;
+	if (req.user.role == "admin") {
+		try {
+			const user = await User.findOne({
+				email: email,
+			});
+
+			if (user == null) {
+				res.status(404).json({ error: "User not found" });
+				return;
+			}
+
+			const isBlocked = !user.isBlocked;
+
+			await User.updateOne(
+				{
+					email: email,
+				},
+				{
+					isBlocked: isBlocked,
+				}
+			);
+
+			res.json({ message: "User blocked/unblocked successfully" });
+		} catch (e) {
+			res.status(500).json({ error: "Failed to get user" });
+		}
+	} else {
+		res.status(403).json({ error: "Unauthorized" });
+	}
 }

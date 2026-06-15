@@ -3,7 +3,7 @@ import express from "express";
 import mongoose from "mongoose";
 import dotenv from "dotenv";
 import cors from "cors";
-
+import path from "path";
 import userRouter from "./Routers/userRouter.js";
 import contentRouter from "./Routers/contentRoute.js";
 import materialRouter from "./Routers/materialRoute.js";
@@ -11,10 +11,14 @@ import reviewRouter from "./Routers/reviewRoute.js";
 import messageRouter from "./Routers/messageRoute.js";
 import complaintRouter from "./Routers/complaintRoute.js";
 import requestRouter from "./Routers/requestRoute.js";
+import { fileURLToPath } from "url";
 
 // Load environment variables based on NODE_ENV
 const envFile = process.env.NODE_ENV === "production" ? ".env.production" : ".env.development";
 dotenv.config({ path: envFile });
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 
@@ -64,6 +68,8 @@ app.use("/api/reviews", reviewRouter);
 app.use("/api/messages", messageRouter);
 app.use("/api/complaints", complaintRouter);
 app.use("/api/requests", requestRouter);
+app.use("/uploads/materials", express.static(path.join("uploads/materials")));
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 /* ---------- SERVER ---------- */
 const PORT = process.env.PORT || 3000;

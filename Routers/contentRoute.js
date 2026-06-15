@@ -1,4 +1,4 @@
-import { addContent, deleteContent, getContents, getFeaturedContents, getPublicContents, updateContent } from "../Controllers/contentController.js";
+import { addContent, deleteContent, getContents, getFeaturedContents, getPublicContents, getTutorContents, updateContent } from "../Controllers/contentController.js";
 import express from "express";
 import { authMiddleware } from "../Middleware/authMiddleware.js";
 import upload from "../Middleware/upload.js";
@@ -8,7 +8,7 @@ import Request from "../Models/request.js";
 
 const contentRouter = express.Router();
 
-contentRouter.post("/add", authMiddleware, addContent);
+contentRouter.post("/add", authMiddleware, upload.single("image"), addContent);
 contentRouter.get("/all", authMiddleware, async (req, res) => {
   try {
     console.log("Student ID from Auth:", req.user?.id); // DEBUG 1
@@ -18,7 +18,6 @@ contentRouter.get("/all", authMiddleware, async (req, res) => {
     console.log("Contents found:", contents.length); // DEBUG 2
 
     // 2. Fetch requests for this student
-    // Ensure you use 'student' as the field name, matching your Model
     const studentRequests = await Request.find({ student: req.user.id });
     console.log("Requests found for student:", studentRequests.length); // DEBUG 3
 
@@ -36,13 +35,13 @@ contentRouter.get("/all", authMiddleware, async (req, res) => {
 
     res.json(mappedData);
   } catch (err) {
-    console.error("SERVER ERROR AT /all:", err); // This will show the real error in your terminal
     res.status(500).json({ message: "Internal Server Error", error: err.message });
   }
 });
 contentRouter.delete("/delete/:id", authMiddleware, deleteContent);
-contentRouter.put("/update/:id", authMiddleware, updateContent);
+contentRouter.put("/update/:id", authMiddleware,upload.single("image"), updateContent);
 contentRouter.get("/featured", getFeaturedContents);
 contentRouter.get("/public", getPublicContents);
+contentRouter.get("/tutor-contents",authMiddleware, getTutorContents);
 
 export default contentRouter;

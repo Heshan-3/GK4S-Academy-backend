@@ -3,27 +3,35 @@ import Review from "../Models/review.js";
 
 export async function addContent(req, res) {
     try {
-        // Only tutors can add content
+        // 1. Check Role
         if (req.user.role !== "tutor") {
             return res.status(403).json({ error: "Only tutors can add content" });
         }
 
-        const { title, videoLink, isPaid } = req.body;
+        // 2. Check if file was actually uploaded
+        if (!req.file) {
+            return res.status(400).json({ error: "Please upload a thumbnail image." });
+        }
 
+        const { title, videoLink, isPaid, price, description } = req.body;
+
+        // 3. Create document (Convert strings from FormData to correct types)
         const newContent = new Content({
-            tutor: req.user._id, // use logged-in tutor's ID
+            tutor: req.user._id,
+            title,
             videoLink,
-            isPaid: isPaid || false,
-            price: req.body.price || 0,
-            description: req.body.description,
-            title : title
+            description,
+            image: req.file.path, // Path from your multer config
+            isPaid: isPaid === "true", // FormData sends strings
+            price: isPaid === "true" ? Number(price) : 0,
         });
 
         await newContent.save();
-        res.json({ message: "Content added successfully" });
+        res.status(201).json({ message: "Content added successfully" });
+
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: "Failed to add content" });
+        console.error("Backend Error:", error);
+        res.status(500).json({ error: "Internal Server Error: " + error.message });
     }
 }
 
@@ -107,30 +115,51 @@ export async function updateContent(req, res) {
         if (req.user.role !== "tutor") {
             return res.status(403).json({ error: "Only tutors can update content" });
         }
+
         const contentId = req.params.id;
         const content = await Content.findById(contentId);
 
         if (!content) {
             return res.status(404).json({ error: "Content not found" });
         }
+
+        // Tutors can only update their own content
         if (content.tutor.toString() !== req.user._id.toString()) {
             return res.status(403).json({ error: "You can only update your own content" });
         }
 
-        const { title, videoLink, isPaid } = req.body;
-        await Content.findByIdAndUpdate(contentId, { title, videoLink, isPaid });
+        // 1. Destructure all fields sent from the frontend FormData
+        const { title, videoLink, isPaid, price, description } = req.body;
+
+        // 2. Prepare the update object
+        const updateData = {
+            title,
+            videoLink,
+            description,
+            // Convert strings from FormData to correct types
+            isPaid: isPaid === "true", 
+            price: isPaid === "true" ? Number(price) : 0,
+        };
+
+        // 3. If a new image was uploaded via Multer, update the image path
+        if (req.file) {
+            updateData.image = req.file.path; 
+        }
+
+        // 4. Update the document in MongoDB
+        await Content.findByIdAndUpdate(contentId, { $set: updateData });
 
         res.json({ message: "Content updated successfully" });
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: "Failed to update content" });
+        console.error("Update Controller Error:", error);
+        res.status(500).json({ error: "Failed to update content: " + error.message });
     }
 }
 
 export const getFeaturedContents = async (req, res) => {
   try {
-    const contents = await Content.find() // Fetches ALL (Paid + Free)
-      .populate("tutor", "firstName lastName") // 🔥 Changed from 'name' to match your model
+    const contents = await Content.find() 
+      .populate("tutor", "firstName lastName")
       .sort({ createdAt: -1 });
 
     const contentsWithStats = await Promise.all(
@@ -166,5 +195,20 @@ export async function getPublicContents(req, res) {
   } catch (error) {
     res.status(500).json({ error: "Failed to fetch public contents" });
   }
+}
+
+export async function getTutorContents(req, res) {
+    try {
+        // Ensure the user is logged in and is a tutor
+        if (!req.user || req.user.role !== 'tutor') {
+            return res.status(403).json({ error: "Access denied" });
+        }
+
+        const contents = await Content.find({ tutor: req.user._id });
+        
+        res.json(contents);
+    } catch (error) {
+        res.status(500).json({ error: "Failed to fetch your courses" });
+    }
 }
 

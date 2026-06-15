@@ -34,7 +34,7 @@ export async function createAccessRequest(req, res) {
 
 export const handleRequestStatus = async (req, res) => {
   try {
-    const { requestId } = req.params; // 🔥 Change from req.body to req.params
+    const { requestId } = req.params; //Change from req.body to req.params
     const { status } = req.body;      // 'approved' or 'rejected'
 
     const request = await Request.findByIdAndUpdate(
@@ -57,15 +57,14 @@ export async function getTutorPendingRequests(req, res) {
             return res.status(403).json({ error: "Access denied. Only tutors can view requests." });
         }
 
-        // 2. Database Query
-        // We find requests where 'tutor' matches the logged-in ID AND status is 'pending'
+    
         const requests = await Request.find({ 
             tutor: req.user._id, 
             status: 'pending' 
         })
-        .populate("student", "firstName lastName email nic") // Get student details
-        .populate("content", "title price")                // Get course details
-        .sort({ createdAt: -1 });                          // Show newest requests first
+        .populate("student", "firstName lastName email nic")
+        .populate("content", "title price")              
+        .sort({ createdAt: -1 });                         
 
         // 3. Response
         res.json({

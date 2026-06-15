@@ -1,48 +1,71 @@
 import Material from "../Models/materials.js";
 
 export async function addMaterial(req, res) {
-    try {
-        if(!req.user || req.user.role !== "tutor"){
-            return res.status(403).json({ error: "Only tutors can add materials" });
-        }
-
-        const { title, fileUrl} = req.body;
-
-        const newMaterial = new Material({
-            tutor: req.user._id, // use logged-in teacher's ID
-            title,
-            fileUrl
-        })
-
-        await newMaterial.save();
-        res.json({ message: "Material added successfully" });
-
-    }catch(error){
-        console.error(error);
-        res.status(500).json({ error: "Failed to add material" });
+  try {
+    if (!req.user || req.user.role !== "tutor") {
+      return res.status(403).json({ error: "Only tutors can add materials" });
     }
+
+    const { title, courseId } = req.body;
+
+    if (!req.file) {
+      return res.status(400).json({ error: "File is required" });
+    }
+
+    const fileUrl = `/uploads/materials/${req.file.filename}`;
+
+    const newMaterial = new Material({
+      tutor: req.user._id,
+      courseId:req.body.courseId,
+      title:req.body.title,
+      fileUrl,
+    });
+
+    await newMaterial.save();
+    res.json({ message: "Material added successfully", material: newMaterial });
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Failed to add material" });
+  }
 }
+
 
 export async function getMaterials(req, res) {
     try {
         if (!req.user) {
             return res.status(401).json({ error: "Unauthorized" });
         }
-        // STUDENT
+
+        // Get the courseId from the query string (e.g., /api/materials/all?courseId=123)
+        const { courseId } = req.query;
+
+        // Build a filter object
+        let filter = {};
+        
+        // If a courseId is provided, we only want materials for that course
+        if (courseId) {
+            filter.courseId = courseId;
+        }
+
         if (req.user.role === "student") {
-            const materials = await Material.find();
+            // Students only see materials for this specific course
+            const materials = await Material.find(filter);
             return res.json(materials);
         }
-        // TUTOR
+
         if (req.user.role === "tutor") {
-            const materials = await Material.find({ tutor: req.user._id });
+            // Tutors see their own materials, filtered by course if provided
+            filter.tutor = req.user._id;
+            const materials = await Material.find(filter);
             return res.json(materials);
         }
-        // ADMIN
+
         if (req.user.role === "admin") {
-            const materials = await Material.find();
+            const materials = await Material.find(filter);
             return res.json(materials);
         }
+
         return res.status(403).json({ error: "Access denied" });
     } catch (error) {
         console.error(error);

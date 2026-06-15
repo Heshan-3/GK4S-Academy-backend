@@ -5,7 +5,7 @@ import { addComplaint, deleteComplaint, getComplaints, updateComplaintStatus } f
 const complaintRouter = express.Router();
 
 complaintRouter.post("/add", authMiddleware, addComplaint);
-complaintRouter.get("/get", authMiddleware, getComplaints);
+complaintRouter.get("/get",authMiddleware, getComplaints);
 complaintRouter.put("/update/:id", authMiddleware, updateComplaintStatus);
 complaintRouter.delete("/delete/:id", authMiddleware, deleteComplaint);
 

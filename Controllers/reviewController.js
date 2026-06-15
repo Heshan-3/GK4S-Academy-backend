@@ -63,9 +63,19 @@ export async function getReviews(req, res) {
 
         const reviews = await Review
             .find({ tutor: tutorId })
-            .populate("student", "name");
+            .populate("student", "firstName lastName profileImage") // Correct fields
+            .sort({ createdAt: -1 }); // Newest first
 
-        res.json(reviews);
+        // Calculate average rating
+        const averageRating = reviews.length > 0 
+            ? (reviews.reduce((acc, item) => acc + item.rating, 0) / reviews.length).toFixed(1)
+            : 0;
+
+        res.json({
+            reviews,
+            averageRating,
+            totalReviews: reviews.length
+        });
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: "Server error" });
@@ -94,6 +104,21 @@ export async function deleteReview(req, res) {
 
     } catch (error) {
         console.error(error);
+        res.status(500).json({ error: "Server error" });
+    }
+}
+
+export async function getReviewsByContent(req, res) {
+    try {
+        const { contentId } = req.params;
+
+        const reviews = await Review
+            .find({ content: contentId }) // Filter by the course ID
+            .populate("student", "firstName lastName")
+            .sort({ createdAt: -1 });
+
+        res.json(reviews);
+    } catch (error) {
         res.status(500).json({ error: "Server error" });
     }
 }

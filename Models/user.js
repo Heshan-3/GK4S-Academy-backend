@@ -8,6 +8,11 @@ const userSchema = new mongoose.Schema({
         unique : true
     },
 
+    profileImage: {
+        type: String,
+        default: ""
+    }, 
+
     password : {
         type : String,
         required : true
