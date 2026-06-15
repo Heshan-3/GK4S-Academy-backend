@@ -40,7 +40,12 @@ contentRouter.get("/all", authMiddleware, async (req, res) => {
 });
 contentRouter.delete("/delete/:id", authMiddleware, deleteContent);
 contentRouter.put("/update/:id", authMiddleware,upload.single("image"), updateContent);
-contentRouter.get("/featured", getFeaturedContents);
+contentRouter.get("/featured", (req, res) => {
+  res.json({
+    success: true,
+    message: "Featured route is working"
+  });
+});
 contentRouter.get("/public", getPublicContents);
 contentRouter.get("/tutor-contents",authMiddleware, getTutorContents);
 
