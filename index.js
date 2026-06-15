@@ -25,7 +25,8 @@ const app = express();
 
 // Define allowed origins for CORS
 const allowedOrigins = [
-  "http://localhost:5173",           // Development front-end
+  "http://localhost:5173",
+  "https://gk4s.netlify.app"           // Development front-end
    // Replace with your production front-end
 ];
 
