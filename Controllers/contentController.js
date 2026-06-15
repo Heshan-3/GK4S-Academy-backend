@@ -160,7 +160,8 @@ export const getFeaturedContents = async (req, res) => {
   try {
     const contents = await Content.find() 
       .populate("tutor", "firstName lastName")
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .limit(4);
 
     const contentsWithStats = await Promise.all(
       contents.map(async (content) => {
