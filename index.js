@@ -72,6 +72,11 @@ app.use("/uploads/materials", express.static(path.join("uploads/materials")));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 /* ---------- SERVER ---------- */
+
+app.get("/", (req, res) => {
+  res.send("Welcome to the TutorConnect API! 🚀");
+});
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT} 🚀`);
